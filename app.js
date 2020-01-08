@@ -4,7 +4,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-const encrypt = require('mongoose-encryption');
+var bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 
@@ -21,7 +22,6 @@ const userSchema = new mongoose.Schema ({
   password: String
 });
 
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password']});
 
 const User = new mongoose.model('User', userSchema)
 
@@ -42,10 +42,11 @@ res.render('register');
 });
 
 app.post('/register', (req, res) => {
+bcrypt.hash(req.body.password, saltRounds, (err, hash) => {
   const newUser = new User(
     {
       email: req.body.username,
-      password: req.body.password
+      password: hash
     });
     newUser.save(err => {
       if (err) {
@@ -54,6 +55,10 @@ app.post('/register', (req, res) => {
         res.render('secrets');
       }
     });
+
+});
+
+
 });
 
 app.post('/login', (req,res) => {
@@ -65,14 +70,16 @@ app.post('/login', (req,res) => {
       console.log(err)
     } else {
       if (foundUser) {
-      if (foundUser.password === password) {
-        res.render('secrets')
-      } else {
-        res.send('You typed a wrong password');
-      }
+        bcrypt.compare(password, foundUser.password, (err, result) => {
+          if (result === true) {
+            res.render('secrets')
+          } else {
+            res.send('You typed a wrong password');
+          }
+        });
     } else {
       res.send('Such user does not exist! Check if your email is correct or register if you had not!')
     }
-  }
+}
 });
 });
