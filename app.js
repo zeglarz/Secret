@@ -37,7 +37,8 @@ mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${proc
 
     const userSchema = new mongoose.Schema({
       email: String,
-      password: String
+      password: String,
+      googleId: String
     });
 
     userSchema.plugin(passportLocalMongoose);
